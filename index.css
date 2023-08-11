@@ -1,0 +1,78 @@
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+html {
+    font-size: 100px;
+    margin: 0;
+}
+
+body {
+    font-family: Helvetica, Arial, sans-serif;
+    margin: 0;
+    width: 100vw;
+    height: 100vh;
+    overflow-x: hidden;
+    flex-flow: column;
+    color: #eff4ff;
+    font-size: 0.15rem;
+}
+
+body *:not(script):not(style) {
+    display: flex;
+}
+
+#backdrop {
+    position: fixed;
+    width: 100vw;
+    height: 100vh;
+    z-index: -100;
+    object-fit: cover;
+    filter: brightness(60%);
+}
+
+.header {
+    position: fixed;
+    top: 0;
+    width: 100vw;
+    z-index: 100;
+    justify-content: center;
+    background: #000c;
+}
+
+#navbar {
+    width: 100vw;
+    max-width: 1000px;
+    min-height: 0.5rem;
+}
+
+.navlogo {
+    color: #fff9;
+    line-height: 0.24rem;
+    font-size: 0.24rem;
+    font-weight: bolder;
+    flex: 1;
+    align-items: center;
+}
+
+.navtab > * {
+    margin: 0 0.1rem;
+    color: #888888;
+    align-items: center;
+    font-weight: 900;
+    text-decoration: none;
+}
+
+.navtab > *:before {
+    margin-right: 0.03rem;
+}
+
+.navtab > *[selected] {
+    color: #fffd;
+}
+
+.navtab > *:hover {
+    color: #2889ff;
+}
