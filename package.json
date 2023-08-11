@@ -1,0 +1,17 @@
+{
+    "name": "antdevicewebapp",
+    "version": "1.0.0",
+    "description": "Website for AntDevice",
+    "main": "index.js",
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "author": "antecer",
+    "license": "ISC",
+    "devDependencies": {
+        "@types/w3c-web-usb": "^1.0.6"
+    },
+    "dependencies": {
+        "@types/wicg-file-system-access": "^2020.9.6"
+    }
+}
