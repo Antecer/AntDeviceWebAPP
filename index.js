@@ -52,11 +52,18 @@
         res.file.forEach(name => res.blob[name] = localBlob[name]);
         res.file.forEach(async (name) => {
             if (!res.blob[name]?.size) {
-                await fetch(res.path + name).then(res => res.blob()).then(blob => {
+                try {
+                    let response = await fetch(res.path + name);
+                    if (!response.ok)
+                        throw new Error(`${response.status} ${response.statusText}`);
+                    let blob = await response.blob();
                     res.blob[name] = blob;
-                    console.log(blob);
-                }).catch(err => console.log(`"${name}" load failed:`, err));
-                await localforage.setItem(res.dkey, res.blob);
+                    await localforage.setItem(res.dkey, res.blob);
+                }
+                catch (error) {
+                    console.log(`Resouce load failed (${name}):`, error);
+                    return;
+                }
             }
             callback(res.blob[name], name);
         });
@@ -87,12 +94,14 @@
     let banners = {
         dkey: 'BannerList',
         path: '/resources/images/',
-        file: ['banner0.jpg', 'banner1.jpg'],
+        file: ['bgimg0.jpg', 'bgimg1.jpg'],
         blob: {}
     };
     loadfiles(banners, (blob, name) => {
         if (name == banners.file[0]) {
             document.getElementById('backdrop')?.setAttribute('src', URL.createObjectURL(blob));
+            var meta = document.querySelector('meta[name="theme-color"]'); // 设置主题色
+            meta.setAttribute('content', '#0001');
         }
     });
     // 绘制导航栏
@@ -118,24 +127,25 @@
     }).join('');
     document.getElementById('navbar')?.insertAdjacentHTML('beforeend', `${logoHTML}<div class="navtab">${tabsHTML}</div>`);
     let navtabEvent = (e) => {
-        if (e.target.localName != 'a')
+        let tapElement = e.target;
+        if (tapElement.localName != 'a')
             return;
-        if (e.target.id != 'ShipTo') {
+        if (tapElement.id != 'ShipTo') {
             switch (e.type) {
                 case 'mouseover':
-                    e.target.classList.add('animate__animated', 'animate__pulse');
+                    tapElement.classList.add('animate__animated', 'animate__pulse');
                     break;
                 case 'mouseout':
-                    e.target.classList.remove('animate__animated', 'animate__pulse');
+                    tapElement.classList.remove('animate__animated', 'animate__pulse');
                     break;
                 case 'click':
                     document.querySelector('.navtab>[selected]')?.removeAttribute('selected');
-                    e.target.setAttribute('selected', '');
+                    tapElement.setAttribute('selected', '');
                     break;
             }
             return;
         }
-        if (e.target.id == 'ShipTo') {
+        else {
             if (e.type == 'click') {
                 let destbarElement = document.getElementById('destbar');
                 destbarElement.style.display = destbarElement.style.display == 'none' ? 'flex' : 'none';
@@ -160,7 +170,7 @@
     let loadShipTo = await localforage.getItem('ShipTo');
     loadfiles(dests, async (blob, name) => {
         navbar.DestList = JSON.parse(await blob.text());
-        let destsHTML = navbar.DestList.SP.map((name) => `<div id="${name}" class="flag-icon">${navbar.DestList.en[name]}</div>`);
+        let destsHTML = navbar.DestList.SP.map((name) => `<div id="${name}" class="flag-icon flag-icon-${name.toLowerCase()}">${navbar.DestList.en[name]}</div>`);
         document.getElementById('destbar')?.insertAdjacentHTML('beforeend', `<div></div><div class="dests">${destsHTML.join('')}</div>`);
         if (loadShipTo) {
             document.getElementById('ShipTo').innerHTML = document.getElementById(loadShipTo).innerHTML;
@@ -180,46 +190,19 @@
     document.querySelector('.header')?.addEventListener('mouseleave', (e) => {
         document.getElementById('destbar').style.display = 'none';
     });
-    // 加载旗帜
-    let flags = {
-        dkey: 'FlagsList',
-        path: '/resources/images/flags/',
-        file: ['4x3.zip'],
+    // 加载CSS图标库
+    let cssIcons = {
+        dkey: 'IconList',
+        path: '/resources/icons/',
+        file: ['flags.zip', 'fontawesome5less.zip'],
         blob: {}
     };
-    loadfiles(flags, async (blob, name) => {
+    loadfiles(cssIcons, async (blob, name) => {
         while (!JSZipReady)
             await sleep(100);
         JSZip.loadAsync(blob).then(async (zip) => {
-            // 遍历zip内的文件(key=path,val=file)
-            for (let file of Object.values(zip.files)) {
-                let blob = await file.async("blob");
-                navbar.DestFlag[file.name.slice(0, -4).toUpperCase()] = blob.slice(0, blob.size, 'image/svg+xml');
-            }
-            while (!navbar.DestList)
-                await sleep(100);
-            navbar.DestList.SP.forEach(async (name) => {
-                while (!document.getElementById(name))
-                    await sleep(100);
-                document.getElementById(name)?.insertAdjacentHTML('afterbegin', `<img src="${URL.createObjectURL(navbar.DestFlag[name])}">`);
-                if (loadShipTo == name)
-                    document.getElementById('ShipTo').innerHTML = document.getElementById(name).innerHTML;
-            });
-        });
-    });
-    // 加载fontawesome6
-    let cssfonts = {
-        dkey: 'CSSFonts',
-        path: '/resources/fonts/',
-        file: ['fontawesome5less.zip'],
-        blob: {}
-    };
-    let fontStyleBlobs = {};
-    let fontFileBlobs = {};
-    loadfiles(cssfonts, async (blob, name) => {
-        while (!JSZipReady)
-            await sleep(100);
-        JSZip.loadAsync(blob).then(async (zip) => {
+            let cssBlobs = [];
+            let resBlobs = {};
             // 遍历zip内的文件(key=path,val=file)
             for (let file of Object.values(zip.files)) {
                 let fileName = file.name.split('/').pop();
@@ -232,21 +215,22 @@
                 }
                 let fileBlob = await file.async("blob");
                 if (fileName.endsWith('.css')) {
-                    fontStyleBlobs[fileName] = fileBlob.slice(0, fileBlob.size, fileType);
+                    cssBlobs.push(fileBlob.slice(0, fileBlob.size, fileType));
                     continue;
                 }
-                fontFileBlobs[fileName] = fileBlob.slice(0, fileBlob.size, fileType);
+                resBlobs[fileName] = fileBlob.slice(0, fileBlob.size, fileType);
             }
-            // 修改css内字体文件路径
-            let cssText = await Object.values(fontStyleBlobs)[0].text();
-            cssText = cssText.replace(/url\([^\?#)]+/g, (match) => {
-                if (fontFileBlobs[match.split('/').pop()]) {
-                    return `url(` + URL.createObjectURL(fontFileBlobs[match.split('/').pop()]);
-                }
+            // 修改css内引用文件路径
+            cssBlobs.forEach(async (cssBlob) => {
+                let cssText = (await cssBlob.text()).replace(/url\([^\?#)]+/g, (match) => {
+                    if (resBlobs[match.split('/').pop()]) {
+                        return `url(` + URL.createObjectURL(resBlobs[match.split('/').pop()]);
+                    }
+                });
+                let newBlob = new Blob([cssText], { type: 'text/css' });
+                let cssHTML = `<link id="${name.replace(/\./g, '_')}" rel="stylesheet" href="${URL.createObjectURL(newBlob)}" />`;
+                document.querySelector('link[rel="stylesheet"]')?.insertAdjacentHTML('beforebegin', cssHTML);
             });
-            let cssBlob = new Blob([cssText], { type: 'text/css' });
-            let cssHTML = `<link id="${name.replace(/\./g, '_')}" rel="stylesheet" href="${URL.createObjectURL(cssBlob)}" />`;
-            document.querySelector('link[rel="stylesheet"]')?.insertAdjacentHTML('beforebegin', cssHTML);
         });
     });
 })();
