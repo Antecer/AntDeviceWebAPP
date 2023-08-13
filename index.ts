@@ -123,7 +123,7 @@ declare let JSZip: any;
 	}
 	loadfiles(banners, (blob: Blob, name: string) => {
 		if (name == banners.file[0]) {
-			document.getElementById('backdrop')?.setAttribute('src', URL.createObjectURL(blob));
+			document.querySelector('#backdrop')?.setAttribute('src', URL.createObjectURL(blob));
 			var meta = document.querySelector('meta[name="theme-color"]');  // 设置主题色
 			meta!.setAttribute('content', '#0001');
 		}
@@ -145,7 +145,7 @@ declare let JSZip: any;
 	}
 	let logoHTML = `<div class="navlogo">${navbar.logo}</div>`;
 	let tabsHTML = Object.entries(navbar.tabs).map(([tab, icon]) => `<a class="${icon}" href="${tab == 'ShipTo' && 'javascript:;" id="' || '#'}${tab}">${tab}</a>`).join('');
-	document.getElementById('navbar')?.insertAdjacentHTML('beforeend', `${logoHTML}<div class="navtab">${tabsHTML}</div>`);
+	document.querySelector('#navbar')?.insertAdjacentHTML('beforeend', `${logoHTML}<div class="navtab">${tabsHTML}</div>`);
 	let navtabEvent = (e: Event) => {
 		let tapElement = e.target as HTMLInputElement;
 		if (tapElement.localName != 'a') return;
@@ -170,7 +170,7 @@ declare let JSZip: any;
 			}
 		} else {
 			if (e.type == 'click') {
-				let destbarElement = document.getElementById('destbar') as HTMLElement;
+				let destbarElement = document.querySelector('#destbar') as HTMLElement;
 				destbarElement.setAttribute('hidden', !(destbarElement.getAttribute('hidden') === 'true') + '');
 			}
 		}
@@ -193,27 +193,27 @@ declare let JSZip: any;
 	loadfiles(dests, async (blob: Blob, name: string) => {
 		navbar.DestList = JSON.parse(await blob.text());
 		let destsHTML = navbar.DestList.SP.map((destId: string) => `<div id="${destId}" class="flag-icon flag-icon-${destId.toLowerCase()}">${navbar.DestList.en[destId]}</div>`);
-		document.getElementById('destbar')?.insertAdjacentHTML('beforeend', `<div></div><div class="dests">${destsHTML.join('')}</div>`);
+		document.querySelector('#destbar')?.insertAdjacentHTML('beforeend', `<div></div><div class="dests">${destsHTML.join('')}</div>`);
 		if (loadShipTo) {
-			document.getElementById('ShipTo')!.innerHTML = document.getElementById(loadShipTo)!.innerHTML;
-			document.getElementById('ShipTo')!.className = document.getElementById(loadShipTo)!.className;
+			document.querySelector('#ShipTo')!.innerHTML = document.getElementById(loadShipTo)!.innerHTML;
+			document.querySelector('#ShipTo')!.className = document.getElementById(loadShipTo)!.className;
 		}
 	}, 0);
-	document.getElementById('destbar')?.addEventListener('click', (e: Event) => {
+	document.querySelector('#destbar')?.addEventListener('click', (e: Event) => {
 		let selectedDest = e.target as HTMLInputElement;
 		if (selectedDest.id == '') return;
-		document.getElementById('ShipTo')!.innerHTML = selectedDest.innerHTML;
-		document.getElementById('ShipTo')!.className = selectedDest.className;
-		document.getElementById('destbar')?.setAttribute('hidden', 'true');
+		document.querySelector('#ShipTo')!.innerHTML = selectedDest.innerHTML;
+		document.querySelector('#ShipTo')!.className = selectedDest.className;
+		document.querySelector('#destbar')?.setAttribute('hidden', 'true');
 		loadShipTo = selectedDest.id;
 		localforage.setItem('ShipTo', loadShipTo);
 	});
 	window.addEventListener('mouseup', (e: Event) => {
 		// 指定范围外点击关闭下拉框
-		if (!document.querySelector('.header')!.contains(e.target as HTMLElement)) {
-			document.querySelector('.header')!.classList.add('fold');
-			document.getElementById('destbar')?.setAttribute('hidden', 'true');
-		}
+		if (document.querySelector('#ShipTo')!.contains(e.target as HTMLElement)) return;
+		if (document.querySelector('#destbar')!.contains(e.target as HTMLElement)) return;
+		document.querySelector('.header')!.classList.add('fold');
+		document.querySelector('#destbar')?.setAttribute('hidden', 'true');
 	});
 
 	// 加载CSS图标库
