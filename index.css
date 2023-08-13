@@ -8,17 +8,21 @@
     box-sizing: border-box;
 }
 
+[hidden="true"] {
+    display: none !important;
+}
+
 html {
     font-size: 100px;
     margin: 0;
-	background-color: #000;
+    background-color: #000;
 }
 
 body {
-	overflow: visible;
-    font-family:  Arial, sans-serif;
+    overflow: visible;
+    font-family: Arial, sans-serif;
     margin: 0;
-	padding: 0;
+    padding: 0;
     width: 100vw;
     height: 100vh;
     overflow-x: hidden;
@@ -38,7 +42,7 @@ body *:not(script):not(style) {
     z-index: -100;
     object-fit: cover;
     filter: brightness(60%);
-	display: block;
+    display: block;
 }
 
 .header {
@@ -75,7 +79,7 @@ body *:not(script):not(style) {
     align-items: center;
     font-weight: 900;
     text-decoration: none;
-	display: flex;
+    display: flex;
 }
 .navtab > *:before {
     margin-right: 0.03rem;
@@ -83,7 +87,7 @@ body *:not(script):not(style) {
 .navtab > *[selected] {
     color: #fffd;
 }
-.navtab > *:hover {
+.navtab > *:not([selected]):hover {
     color: #2889ff;
 }
 
@@ -110,67 +114,56 @@ body *:not(script):not(style) {
     background: #fff4;
 }
 
-
 @media only screen and (max-width: 1000px) {
-	#navbar {
-		padding: 0.13rem 0.1rem;
-	}
+    #navbar {
+        padding: 0.13rem 0.1rem;
+    }
 }
 
 @media only screen and (max-width: 800px) {
-	.header {
-		background: rgba(0, 0, 0, 0.5);
-		opacity: 0.5;
-	}
+    #navbar {
+        align-items: flex-start;
+    }
 
-	.header:not(.fold) {
-		background: rgba(0, 0, 0, 0.8);
-		opacity: 1;
-	}
+    #navbar > .navtab {
+        flex-flow: column;
+    }
 
-	#navbar {
-		align-items: flex-start;
-	}
+    #navbar > .navtab > a {
+        margin: 0.05rem 0;
+    }
 
-	#navbar>.navtab {
-		flex-flow: column;
-	}
+    .header.fold .navtab > a:not([selected]) {
+        display: none;
+    }
 
-	#navbar>.navtab>a {
-		margin: 0.05rem 0;
-	}
-
-	.header.fold .navtab>a:not(.selected) {
-		display: none;
-	}
-
-	#navbar>.navtab>a.selected:after {
-		font-family: 'Font Awesome 5 Free';
-		font-weight: 900;
-		content: "\f107";
-		margin-left: 0.1rem;
-	}
+    #navbar > .navtab > a[selected]:after {
+        font-family: "Font Awesome 5 Free";
+        font-weight: 900;
+        content: "\f107";
+        margin-left: 0.1rem;
+    }
 }
 
 @media only screen and (max-width: 420px) {
-	.dests>.flag-icon {
-		font-size: 0.85em;
-		flex: 0 0 33.33%;
-	}
+    .dests > .flag-icon {
+        font-size: 0.85em;
+        flex: 0 0 33.33%;
+    }
 }
 
 @media only screen and (max-width: 800px) and (max-height: 375px) {
-	#navbar {
-		min-height: 0.36rem;
-		padding: 0.06rem;
-	}
+    #navbar {
+        min-height: 0.36rem;
+        padding: 0.06rem;
+    }
 
-	.dests {
-		width: 100%;
-	}
+    .dests {
+        width: 100%;
+    }
 
-	.dests>.flag-icon {
-		font-size: 0.85em;
-		flex: 0 0 20%;
-	}
+    .dests > .flag-icon {
+        font-size: 0.85em;
+        flex: 0 0 20%;
+    }
 }

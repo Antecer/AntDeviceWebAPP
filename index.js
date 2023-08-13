@@ -47,26 +47,38 @@
     }
     eval(localforagejs);
     // 资源加载函数
-    let loadfiles = async (res, callback) => {
+    let loadfiles = async (res, callback, nextUpdateTime = -1, reloadCallback = false) => {
+        let needUpdate = false;
         let localBlob = (await localforage.getItem(res.dkey)) || {};
-        res.file.forEach(name => res.blob[name] = localBlob[name]);
-        res.file.forEach(async (name) => {
-            if (!res.blob[name]?.size) {
-                try {
-                    let response = await fetch(res.path + name);
-                    if (!response.ok)
-                        throw new Error(`${response.status} ${response.statusText}`);
-                    let blob = await response.blob();
-                    res.blob[name] = blob;
-                    await localforage.setItem(res.dkey, res.blob);
-                }
-                catch (error) {
-                    console.log(`Resouce load failed (${name}):`, error);
-                    return;
-                }
+        res.file.forEach(fileName => res.blob[fileName] = localBlob[fileName]); // 创建数据转储，以便过滤过时资源
+        res.file.forEach((fileName) => {
+            if (!res.blob[fileName]?.size || (nextUpdateTime === 0)) {
+                (async () => {
+                    try {
+                        let response = await fetch(res.path + fileName);
+                        if (!response.ok)
+                            throw new Error(`${response.status} ${response.statusText}`);
+                        let blob = await response.blob();
+                        res.blob[fileName] = blob;
+                        await localforage.setItem(res.dkey, res.blob);
+                        callback(res.blob[fileName], fileName);
+                    }
+                    catch (error) {
+                        console.log(`Resouce load failed (${fileName}):`, error);
+                        return;
+                    }
+                })();
             }
-            callback(res.blob[name], name);
+            else {
+                needUpdate = true;
+                callback(res.blob[fileName], fileName);
+            }
         });
+        needUpdate && (nextUpdateTime > 0) && (async () => {
+            await sleep(nextUpdateTime * 1000);
+            console.log(`[UpdateFilesTask] update resource:`, { dkey: res.dkey });
+            loadfiles(res, reloadCallback && callback || (() => { }), 0, false);
+        })();
     };
     // 加载css库
     let styles = {
@@ -119,12 +131,7 @@
         DestFlag: {}
     };
     let logoHTML = `<div class="navlogo">${navbar.logo}</div>`;
-    let tabsHTML = Object.entries(navbar.tabs).map(([tab, icon]) => {
-        if (tab != 'ShipTo') {
-            return `<a class="${icon}" href="#${tab}">${tab}</a>`;
-        }
-        return `<a id="${tab}" class="${icon}" href="javascript:;">${tab}</a>`;
-    }).join('');
+    let tabsHTML = Object.entries(navbar.tabs).map(([tab, icon]) => `<a class="${icon}" href="${tab == 'ShipTo' && 'javascript:;" id="' || '#'}${tab}">${tab}</a>`).join('');
     document.getElementById('navbar')?.insertAdjacentHTML('beforeend', `${logoHTML}<div class="navtab">${tabsHTML}</div>`);
     let navtabEvent = (e) => {
         let tapElement = e.target;
@@ -133,22 +140,28 @@
         if (tapElement.id != 'ShipTo') {
             switch (e.type) {
                 case 'mouseover':
-                    tapElement.classList.add('animate__animated', 'animate__pulse');
+                    (tapElement.getAttribute('selected') === null) && tapElement.classList.add('animate__animated', 'animate__pulse');
                     break;
                 case 'mouseout':
                     tapElement.classList.remove('animate__animated', 'animate__pulse');
                     break;
                 case 'click':
+                    let headerElement = document.querySelector('.header');
+                    if (headerElement?.classList.contains('fold')) {
+                        headerElement.classList.remove('fold');
+                    }
+                    else {
+                        headerElement?.classList.add('fold');
+                    }
                     document.querySelector('.navtab>[selected]')?.removeAttribute('selected');
                     tapElement.setAttribute('selected', '');
                     break;
             }
-            return;
         }
         else {
             if (e.type == 'click') {
                 let destbarElement = document.getElementById('destbar');
-                destbarElement.style.display = destbarElement.style.display == 'none' ? 'flex' : 'none';
+                destbarElement.setAttribute('hidden', !(destbarElement.getAttribute('hidden') === 'true') + '');
             }
         }
     };
@@ -170,25 +183,29 @@
     let loadShipTo = await localforage.getItem('ShipTo');
     loadfiles(dests, async (blob, name) => {
         navbar.DestList = JSON.parse(await blob.text());
-        let destsHTML = navbar.DestList.SP.map((name) => `<div id="${name}" class="flag-icon flag-icon-${name.toLowerCase()}">${navbar.DestList.en[name]}</div>`);
+        let destsHTML = navbar.DestList.SP.map((destId) => `<div id="${destId}" class="flag-icon flag-icon-${destId.toLowerCase()}">${navbar.DestList.en[destId]}</div>`);
         document.getElementById('destbar')?.insertAdjacentHTML('beforeend', `<div></div><div class="dests">${destsHTML.join('')}</div>`);
         if (loadShipTo) {
             document.getElementById('ShipTo').innerHTML = document.getElementById(loadShipTo).innerHTML;
             document.getElementById('ShipTo').className = document.getElementById(loadShipTo).className;
         }
-    });
+    }, 0);
     document.getElementById('destbar')?.addEventListener('click', (e) => {
         let selectedDest = e.target;
         if (selectedDest.id == '')
             return;
         document.getElementById('ShipTo').innerHTML = selectedDest.innerHTML;
         document.getElementById('ShipTo').className = selectedDest.className;
-        document.getElementById('destbar').style.display = 'none';
+        document.getElementById('destbar')?.setAttribute('hidden', 'true');
         loadShipTo = selectedDest.id;
         localforage.setItem('ShipTo', loadShipTo);
     });
-    document.querySelector('.header')?.addEventListener('mouseleave', (e) => {
-        document.getElementById('destbar').style.display = 'none';
+    window.addEventListener('mouseup', (e) => {
+        // 指定范围外点击关闭下拉框
+        if (!document.querySelector('.header').contains(e.target)) {
+            document.querySelector('.header').classList.add('fold');
+            document.getElementById('destbar')?.setAttribute('hidden', 'true');
+        }
     });
     // 加载CSS图标库
     let cssIcons = {
