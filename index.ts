@@ -143,7 +143,7 @@ declare let JSZip: any;
 		DestList: {} as any,
 		DestFlag: {} as any
 	}
-	let logoHTML = `<div class="navlogo">${navbar.logo}</div>`;
+	let logoHTML = `<div id="navlogo" class="gradient">${navbar.logo}</div>`;
 	let tabsHTML = Object.entries(navbar.tabs).map(([tab, icon]) => `<a class="${icon}" href="${tab == 'ShipTo' && 'javascript:;" id="' || '#'}${tab}">${tab}</a>`).join('');
 	document.querySelector('#navbar')?.insertAdjacentHTML('beforeend', `${logoHTML}<div class="navtab">${tabsHTML}</div>`);
 	let navtabEvent = (e: Event) => {
@@ -158,12 +158,8 @@ declare let JSZip: any;
 					tapElement.classList.remove('animate__animated', 'animate__pulse');
 					break;
 				case 'click':
-					let headerElement = document.querySelector('.header');
-					if (headerElement?.classList.contains('fold')) {
-						headerElement.classList.remove('fold');
-					} else {
-						headerElement?.classList.add('fold');
-					}
+					let headerElement = document.querySelector('.header') as HTMLElement;
+					headerElement.classList.contains('fold') ? headerElement.classList.remove('fold') : headerElement.classList.add('fold');
 					document.querySelector('.navtab>[selected]')?.removeAttribute('selected');
 					tapElement.setAttribute('selected', '');
 					break;
@@ -189,30 +185,30 @@ declare let JSZip: any;
 		file: ['destlist.json'],
 		blob: {} as any
 	}
-	let loadShipTo = await localforage.getItem('ShipTo');
+	let shipToId = await localforage.getItem('ShipTo');
 	loadfiles(dests, async (blob: Blob, name: string) => {
 		navbar.DestList = JSON.parse(await blob.text());
 		let destsHTML = navbar.DestList.SP.map((destId: string) => `<div id="${destId}" class="flag-icon flag-icon-${destId.toLowerCase()}">${navbar.DestList.en[destId]}</div>`);
-		document.querySelector('#destbar')?.insertAdjacentHTML('beforeend', `<div></div><div class="dests">${destsHTML.join('')}</div>`);
-		if (loadShipTo) {
-			document.querySelector('#ShipTo')!.innerHTML = document.getElementById(loadShipTo)!.innerHTML;
-			document.querySelector('#ShipTo')!.className = document.getElementById(loadShipTo)!.className;
+		document.querySelector('#destbar')?.insertAdjacentHTML('beforeend', `<div class="dests">${destsHTML.join('')}</div>`);
+		if (shipToId) {
+			document.querySelector('#ShipTo')!.innerHTML = document.getElementById(shipToId)!.innerHTML;
+			document.querySelector('#ShipTo')!.className = document.getElementById(shipToId)!.className;
 		}
 	}, 0);
 	document.querySelector('#destbar')?.addEventListener('click', (e: Event) => {
 		let selectedDest = e.target as HTMLInputElement;
-		if (selectedDest.id == '') return;
+		if (!selectedDest.classList.contains('flag-icon')) return;
 		document.querySelector('#ShipTo')!.innerHTML = selectedDest.innerHTML;
 		document.querySelector('#ShipTo')!.className = selectedDest.className;
 		document.querySelector('#destbar')?.setAttribute('hidden', 'true');
-		loadShipTo = selectedDest.id;
-		localforage.setItem('ShipTo', loadShipTo);
+		shipToId = selectedDest.id;
+		localforage.setItem('ShipTo', shipToId);
 	});
 	window.addEventListener('mouseup', (e: Event) => {
 		// 指定范围外点击关闭下拉框
+		document.querySelector('.navtab')!.contains(e.target as HTMLElement) || document.querySelector('.header')!.classList.add('fold');
 		if (document.querySelector('#ShipTo')!.contains(e.target as HTMLElement)) return;
-		if (document.querySelector('#destbar')!.contains(e.target as HTMLElement)) return;
-		document.querySelector('.header')!.classList.add('fold');
+		if (document.querySelector('.dests')!.contains(e.target as HTMLElement)) return;
 		document.querySelector('#destbar')?.setAttribute('hidden', 'true');
 	});
 

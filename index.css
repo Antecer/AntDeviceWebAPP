@@ -64,14 +64,17 @@ body *:not(script):not(style) {
     max-width: 1000px;
     min-height: 0.5rem;
 }
-
-.navlogo {
+#navbar::before {
+    content: "\00a0";
+    flex: 1;
+}
+#navlogo {
     color: #fff9;
     line-height: 0.24rem;
     font-size: 0.24rem;
     font-weight: bolder;
-    flex: 1;
     align-items: center;
+    order: -1;
 }
 .navtab > * {
     margin: 0 0.1rem;
@@ -81,7 +84,7 @@ body *:not(script):not(style) {
     text-decoration: none;
     display: flex;
 }
-.navtab > *:before {
+.navtab > *::before {
     margin-right: 0.03rem;
 }
 .navtab > *[selected] {
@@ -94,7 +97,8 @@ body *:not(script):not(style) {
 #destbar {
     margin-bottom: 0.1rem;
 }
-#destbar > div:not([class]) {
+#destbar::before {
+    content: "\00a0";
     flex: 1;
 }
 #destbar > .dests {
@@ -166,4 +170,28 @@ body *:not(script):not(style) {
         font-size: 0.85em;
         flex: 0 0 20%;
     }
+}
+
+@keyframes Gradient {
+    0% {
+        background-position: 0% 50%;
+    }
+
+    50% {
+        background-position: 100% 50%;
+    }
+
+    100% {
+        background-position: 0% 50%;
+    }
+}
+
+.gradient,
+.gradient-hover:hover {
+    animation-delay: 1s;
+    background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-size: 400% 400%;
+    animation: Gradient 15s ease infinite;
 }
