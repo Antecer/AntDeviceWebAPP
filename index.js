@@ -16,7 +16,8 @@
         'ttf': 'font/ttf',
         'eot': 'font/eot',
         'woff': 'font/woff',
-        'woff2': 'font/woff2'
+        'woff2': 'font/woff2',
+        'zip': 'application/zip',
     };
     let fetchAll = async (infolist, timeout) => {
         let fetchInfos = infolist.map(info => getType(info) === 'Object' ? info : { url: info, options: {} });
@@ -39,14 +40,14 @@
         }
         return resArray;
     };
-    // 加载localforage库
-    let localforagejs = localStorage.getItem('localforage');
-    if (!localforagejs) {
-        localforagejs = await fetch('/resources/js/localforage.min.js').then(res => res.text());
-        window.localStorage.setItem('localforage', localforagejs);
-    }
-    eval(localforagejs);
-    // 资源加载函数
+    // 加载基础功能库 [localforage, jszip]
+    let localforageJS = localStorage.getItem('localforageJS') || (await fetch('/resources/js/localforage.min.js').then(res => res.text()));
+    let JSZipJS = localStorage.getItem('JSZipJS') || (await fetch('/resources/js/jszip.min.js').then(res => res.text()));
+    eval(localforageJS);
+    eval(JSZipJS);
+    localStorage.setItem('localforageJS', localforageJS);
+    localStorage.setItem('JSZipJS', JSZipJS);
+    // 资源文件加载函数(带缓存)
     let loadfiles = async (res, callback, nextUpdateTime = -1, reloadCallback = false) => {
         let needUpdate = false;
         let localBlob = (await localforage.getItem(res.dkey)) || {};
@@ -56,8 +57,9 @@
                 (async () => {
                     try {
                         let response = await fetch(res.path + fileName);
-                        if (!response.ok)
+                        if (!response.ok) {
                             throw new Error(`${response.status} ${response.statusText}`);
+                        }
                         let blob = await response.blob();
                         res.blob[fileName] = blob;
                         await localforage.setItem(res.dkey, res.blob);
@@ -80,6 +82,54 @@
             loadfiles(res, reloadCallback && callback || (() => { }), 0, false);
         })();
     };
+    // 库文件加载函数
+    const srcRegExp = /[^/]+\/*[^/]+$/;
+    const urlRegExp = /url\(["']*([^?#'"\)]+)([^'"\)]*)['"]*/g;
+    let loadLibrarys = (res) => {
+        loadfiles(res, async (blob, name) => {
+            if (blob.type === 'text/css') {
+                let cssHTML = `<link file="${name}" rel="stylesheet" href="${URL.createObjectURL(blob)}" />`;
+                document.querySelector('link[rel="stylesheet"]')?.insertAdjacentHTML('beforebegin', cssHTML);
+                return;
+            }
+            if (blob.type === 'application/zip') {
+                JSZip.loadAsync(blob).then(async (zip) => {
+                    let cssBlobs = [];
+                    let resBlobs = {};
+                    // 遍历并获取zip内的文件(key=path,val=file)
+                    for (let file of Object.values(zip.files)) {
+                        let fileName = file.name.match(srcRegExp)?.[0];
+                        if (!fileName) {
+                            continue;
+                        }
+                        let fileType = mimetypes[fileName.split('.').pop()];
+                        if (!fileType) {
+                            console.warn(`unknow file type：${fileName}`);
+                            continue;
+                        }
+                        let fileBlob = await file.async("blob");
+                        if (fileName.endsWith('.css')) {
+                            cssBlobs.push(fileBlob.slice(0, fileBlob.size, fileType));
+                            continue;
+                        }
+                        resBlobs[fileName] = fileBlob.slice(0, fileBlob.size, fileType);
+                    }
+                    // 替换css内引用资源路径
+                    cssBlobs.forEach(async (cssBlob) => {
+                        let cssText = await (new Response(cssBlob)).text();
+                        cssText = cssText.replace(urlRegExp, (match, p1, p2) => {
+                            let srcBlob = resBlobs[p1.match(srcRegExp)?.[0]];
+                            return srcBlob && `url("${URL.createObjectURL(srcBlob)}${p2}"` || match;
+                        });
+                        let newBlob = new Blob([cssText], { type: 'text/css' });
+                        let cssHTML = `<link file="${name}" rel="stylesheet" href="${URL.createObjectURL(newBlob)}" />`;
+                        document.querySelector('link[rel="stylesheet"]')?.insertAdjacentHTML('beforebegin', cssHTML);
+                    });
+                });
+                return;
+            }
+        });
+    };
     // 加载css库
     let styles = {
         dkey: 'StyleList',
@@ -87,21 +137,7 @@
         file: ['animate.min.css'],
         blob: {}
     };
-    loadfiles(styles, (blob, name) => {
-        let cssHTML = `<link id="${name.replace(/\./g, '_')}" rel="stylesheet" href="${URL.createObjectURL(blob)}" />`;
-        document.querySelector('link[rel="stylesheet"]')?.insertAdjacentHTML('beforebegin', cssHTML);
-    });
-    // 加载js库
-    let scripts = {
-        dkey: 'ScriptList',
-        path: '/resources/js/',
-        file: ['jszip.min.js'],
-        blob: {}
-    };
-    let JSZipReady;
-    loadfiles(scripts, (blob, name) => {
-        blob.text().then(jstext => JSZipReady = eval(jstext));
-    });
+    loadLibrarys(styles);
     // 加载背景图片
     let banners = {
         dkey: 'BannerList',
@@ -177,8 +213,8 @@
     };
     let shipToId = await localforage.getItem('ShipTo');
     loadfiles(dests, async (blob, name) => {
-        navbar.DestList = JSON.parse(await blob.text());
-        let destsHTML = navbar.DestList.SP.map((destId) => `<div id="${destId}" class="flag-icon flag-icon-${destId.toLowerCase()}">${navbar.DestList.en[destId]}</div>`);
+        navbar.DestList = JSON.parse(await new Response(blob).text());
+        let destsHTML = navbar.DestList.SP.map((destId) => `<div id="${destId}" class="fi-${destId.toLowerCase()} dest">${navbar.DestList.en[destId]}</div>`);
         document.querySelector('#destbar')?.insertAdjacentHTML('beforeend', `<div class="dests">${destsHTML.join('')}</div>`);
         if (shipToId) {
             document.querySelector('#ShipTo').innerHTML = document.getElementById(shipToId).innerHTML;
@@ -187,7 +223,7 @@
     }, 0);
     document.querySelector('#destbar')?.addEventListener('click', (e) => {
         let selectedDest = e.target;
-        if (!selectedDest.classList.contains('flag-icon'))
+        if (!selectedDest.classList.contains('dest'))
             return;
         document.querySelector('#ShipTo').innerHTML = selectedDest.innerHTML;
         document.querySelector('#ShipTo').className = selectedDest.className;
@@ -208,43 +244,8 @@
     let cssIcons = {
         dkey: 'IconList',
         path: '/resources/icons/',
-        file: ['flags.zip', 'fontawesome5less.zip'],
+        file: ['flag-icons-6.9.4.zip', 'fontawesome5less.zip'],
         blob: {}
     };
-    loadfiles(cssIcons, async (blob, name) => {
-        while (!JSZipReady)
-            await sleep(100);
-        JSZip.loadAsync(blob).then(async (zip) => {
-            let cssBlobs = [];
-            let resBlobs = {};
-            // 遍历zip内的文件(key=path,val=file)
-            for (let file of Object.values(zip.files)) {
-                let fileName = file.name.split('/').pop();
-                if (!fileName)
-                    continue;
-                let fileType = mimetypes[fileName.split('.').pop()];
-                if (!fileType) {
-                    console.log(`unknow file type：${fileName}`);
-                    continue;
-                }
-                let fileBlob = await file.async("blob");
-                if (fileName.endsWith('.css')) {
-                    cssBlobs.push(fileBlob.slice(0, fileBlob.size, fileType));
-                    continue;
-                }
-                resBlobs[fileName] = fileBlob.slice(0, fileBlob.size, fileType);
-            }
-            // 修改css内引用文件路径
-            cssBlobs.forEach(async (cssBlob) => {
-                let cssText = (await cssBlob.text()).replace(/url\([^\?#)]+/g, (match) => {
-                    if (resBlobs[match.split('/').pop()]) {
-                        return `url(` + URL.createObjectURL(resBlobs[match.split('/').pop()]);
-                    }
-                });
-                let newBlob = new Blob([cssText], { type: 'text/css' });
-                let cssHTML = `<link id="${name.replace(/\./g, '_')}" rel="stylesheet" href="${URL.createObjectURL(newBlob)}" />`;
-                document.querySelector('link[rel="stylesheet"]')?.insertAdjacentHTML('beforebegin', cssHTML);
-            });
-        });
-    });
+    loadLibrarys(cssIcons);
 })();

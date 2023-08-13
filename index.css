@@ -93,6 +93,12 @@ body *:not(script):not(style) {
 .navtab > *:not([selected]):hover {
     color: #2889ff;
 }
+#ShipTo.dest {
+    background-size: 0.15rem;
+    background-position: 0 50%;
+    padding-left: 0.18rem;
+    background-repeat: no-repeat;
+}
 
 #destbar {
     margin-bottom: 0.1rem;
@@ -108,14 +114,18 @@ body *:not(script):not(style) {
     flex-flow: row wrap;
     align-content: flex-start;
 }
-.dests > .flag-icon {
+.dests > .dest {
     margin: 0.02rem 0;
-    padding: 0 0.05rem;
     flex: 0 0 25%;
     cursor: pointer;
+    color: #fffa;
+    padding-left: 0.3rem;
+    background-position: 0.05rem 50%;
+    background-size: 0.2rem 0.15rem;
+    background-repeat: no-repeat;
 }
-.dests > .flag-icon:hover {
-    background: #fff4;
+.dests > .dest:hover {
+    background-color: #fff4;
 }
 
 @media only screen and (max-width: 1000px) {
@@ -150,7 +160,7 @@ body *:not(script):not(style) {
 }
 
 @media only screen and (max-width: 420px) {
-    .dests > .flag-icon {
+    .dests > .dest {
         font-size: 0.85em;
         flex: 0 0 33.33%;
     }
@@ -166,7 +176,7 @@ body *:not(script):not(style) {
         width: 100%;
     }
 
-    .dests > .flag-icon {
+    .dests > .dest {
         font-size: 0.85em;
         flex: 0 0 20%;
     }
@@ -190,6 +200,7 @@ body *:not(script):not(style) {
 .gradient-hover:hover {
     animation-delay: 1s;
     background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
+    background-clip: text;
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-size: 400% 400%;
