@@ -41,8 +41,8 @@
         return resArray;
     };
     // 加载基础功能库 [localforage, jszip]
-    let localforageJS = localStorage.getItem('localforageJS') || (await fetch('/resources/js/localforage.min.js').then(res => res.text()));
-    let JSZipJS = localStorage.getItem('JSZipJS') || (await fetch('/resources/js/jszip.min.js').then(res => res.text()));
+    let localforageJS = localStorage.getItem('localforageJS') || (await fetch('resources/js/localforage.min.js').then(res => res.text()));
+    let JSZipJS = localStorage.getItem('JSZipJS') || (await fetch('resources/js/jszip.min.js').then(res => res.text()));
     eval(localforageJS);
     eval(JSZipJS);
     localStorage.setItem('localforageJS', localforageJS);
@@ -133,7 +133,7 @@
     // 加载css库
     let styles = {
         dkey: 'StyleList',
-        path: '/resources/css/',
+        path: 'resources/css/',
         file: ['animate.min.css'],
         blob: {}
     };
@@ -141,7 +141,7 @@
     // 加载背景图片
     let banners = {
         dkey: 'BannerList',
-        path: '/resources/images/',
+        path: 'resources/images/',
         file: ['bgimg0.jpg', 'bgimg1.jpg'],
         blob: {}
     };
@@ -207,7 +207,7 @@
     // 绘制目的地列表
     let dests = {
         dkey: 'DestList',
-        path: '/resources/json/',
+        path: 'resources/json/',
         file: ['destlist.json'],
         blob: {}
     };
@@ -243,7 +243,7 @@
     // 加载CSS图标库
     let cssIcons = {
         dkey: 'IconList',
-        path: '/resources/icons/',
+        path: 'resources/icons/',
         file: ['flag-icons-6.9.4.zip', 'fontawesome5less.zip'],
         blob: {}
     };
