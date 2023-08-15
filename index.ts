@@ -251,7 +251,7 @@ declare let JSZip: any;
 		dests,
 		async (blob: Blob, name: string) => {
 			navbar.dests = JSON.parse(await new Response(blob).text());
-			let destsHTML = navbar.dests.SP.map((destId: string) => (destId && `<div id="${destId}" class="fi-${destId.toLowerCase()} dest">${destId || navbar.dests.en[destId]}</div>`) || `<div></div>`);
+			let destsHTML = navbar.dests.SP.map((destId: string) => (destId && `<div id="${destId}" class="fi-${destId.toLowerCase()} dest" title="${navbar.dests.en[destId] || ''}">${destId}</div>`) || `<div></div>`);
 			document.getElementById('destbar')!.insertAdjacentHTML('beforeend', `<div class="dests">${destsHTML.join('')}</div>`);
 		},
 		0
