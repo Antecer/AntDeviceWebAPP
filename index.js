@@ -275,7 +275,6 @@
             let destbar = document.getElementById('destbar');
             while (!destbar.hasChildNodes())
                 await sleep(100);
-            destbar.onanimationend = () => destbar.classList.remove('magictime', 'sliderightReturn');
             destbar.classList.add('magictime', 'sliderightReturn');
             let navdest = document.getElementById('navdest');
             navdest.onanimationend = () => navdest.classList.remove('magictime', 'vanishIn');
