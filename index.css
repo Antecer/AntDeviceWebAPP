@@ -1,7 +1,12 @@
+html {
+	font-size: 100px;
+}
+
 :root {
 	--themeBg: #22262d;
-	--dest-width: 60px;
-	--dest-padding-height: 5px;
+	--head-height: 0.5rem;
+	--dest-width: 0.6rem;
+	--dest-padding-height: 0.05rem;
 }
 
 @keyframes Gradient {
@@ -47,10 +52,7 @@
 	animation-name: slide_Down;
 }
 
-html {
-	font-size: 100px;
-}
-
+body,
 body * {
 	display: flex;
 	box-sizing: border-box;
@@ -111,7 +113,7 @@ body::before {
 }
 #navlogo {
 	order: -1;
-	height: 0.5rem;
+	height: var(--head-height);
 	color: #fff9;
 	font-size: 0.24rem;
 	align-items: center;
@@ -137,13 +139,13 @@ body::before {
 
 #navdest {
 	width: 0.4rem;
-	height: 0.5rem;
+	height: var(--head-height);
 }
 
 #destbar {
 	z-index: 99;
 	margin-bottom: 0.1rem;
-	max-height: calc(100vh - 0.5rem);
+	max-height: calc(100vh - var(--head-height));
 	overflow-y: auto;
 	flex-flow: column;
 	align-items: flex-end;
@@ -175,7 +177,7 @@ body::before {
 
 @media only screen and (max-width: 667px) {
 	.navtab {
-		height: 0.5rem;
+		height: var(--head-height);
 		overflow: hidden;
 		transition: height 0.5s ease-out;
 		flex-flow: column;
@@ -195,12 +197,14 @@ body::before {
 
 .body {
 	width: 100vw;
-	height: 100%;
-	padding-top: 0.25rem;
+	margin-top: var(--head-height);
+	height: calc(100vh - var(--head-height));
+	flex-flow: column;
 }
 .body::before {
+	/*测试代码*/
 	width: 100vw;
 	height: 100%;
-	content: '';
+	content: 'TEST';
 	background-color: #fff7;
 }
