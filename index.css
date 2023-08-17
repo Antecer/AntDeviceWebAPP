@@ -1,4 +1,5 @@
 :root {
+	--themeBg: #22262d;
 	--dest-width: 60px;
 	--dest-padding-height: 5px;
 }
@@ -71,6 +72,7 @@ body {
 	height: 100vh;
 	font-size: 0.15rem;
 	color: #eff4ff;
+	background-color: var(--themeBg);
 	background-size: cover;
 	background-position: center;
 	flex-flow: column;
