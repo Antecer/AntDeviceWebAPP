@@ -64,8 +64,8 @@ window.fetchAll = async (infolist, timeout) => {
 	window.localforage = undefined;
 	window.JSZip = undefined;
 	let baseUrl = (location.href.endsWith('.html') ? '/' : '') + 'resources/js/';
-	let localforageJS = localStorage.getItem('localforageJS') || (await fetch(`${baseUrl}localforage.min.js`)).then((res) => res.text());
-	let JSZipJS = localStorage.getItem('JSZipJS') || (await fetch(`${baseUrl}jszip.min.js`)).then((res) => res.text());
+	let localforageJS = localStorage.getItem('localforageJS') || (await fetch(`${baseUrl}localforage.min.js`).then((res) => res.text()));
+	let JSZipJS = localStorage.getItem('JSZipJS') || (await fetch(`${baseUrl}jszip.min.js`).then((res) => res.text()));
 	g_eval(localforageJS);
 	g_eval(JSZipJS);
 	localStorage.setItem('localforageJS', localforageJS);
