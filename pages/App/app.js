@@ -2,11 +2,8 @@
 (async () => {
 	let baseURL = 'pages/App/';
 	// 构建容器元素
-	window.pageElement = document.createElement('div');
-	window.pageElement.className = 'context';
-	// 载入css样式表
-	window.pageElement.insertAdjacentHTML('afterbegin', `<link rel="stylesheet" href="${baseURL}app.css" />`);
-
+	let pageElement = document.createElement('div');
+	pageElement.className = 'context';
 	// 元素缩放
 	const transform = (selectedElement) => {
 		let zoomValX = (selectedElement.parentNode.clientWidth - 20) / selectedElement.clientWidth;
@@ -14,6 +11,13 @@
 		let zoomVal = zoomValX < zoomValY ? zoomValX : zoomValY;
 		if (zoomVal > 1) zoomVal = 1;
 		selectedElement.setAttribute('style', `transform: scale(${zoomVal})`);
+	};
+	let resizeTimer;
+	const refreshZoom = (selectedElement, delayTime) => {
+		clearTimeout(resizeTimer);
+		resizeTimer = setTimeout(() => {
+			transform(selectedElement);
+		}, delayTime);
 	};
 	// 绘制键盘布局
 	const drawLayout = (selectPanel) => {
@@ -83,31 +87,29 @@
 	let appres = {
 		dkey: 'AppResources',
 		path: 'pages/App/',
-		file: ['HID_KeyboardPage.json', 'HID_ConsumerPage.json', 'HID_Special.json', 'DEV_PartLayout.json', 'DEV_TabPanel.json'],
+		file: ['app.css', 'HID_KeyboardPage.json', 'HID_ConsumerPage.json', 'HID_Special.json', 'DEV_PartLayout.json', 'DEV_TabPanel.json'],
 		blob: {},
 	};
 	let selectedKeycap = null;
+	const devContent = document.createElement('div');
+	devContent.className = 'content';
 	loadfiles(
 		appres,
 		async (blob, name) => {
 			switch (name) {
+				case 'app.css':
+					// 载入css样式表
+					pageElement.insertAdjacentHTML('afterbegin', `<link rel="stylesheet" href="${URL.createObjectURL(blob)}" />`);
+					break;
 				case 'DEV_PartLayout.json':
 					// 绘制键盘布局
 					let PartLayout = await new Response(blob).json();
-					const devContent = document.createElement('div');
-					devContent.className = 'content';
 					devContent.insertAdjacentHTML('afterbegin', drawLayout(PartLayout[0]));
-					window.pageElement.insertAdjacentElement('afterbegin', devContent);
+					pageElement.insertAdjacentElement('afterbegin', devContent);
 					// 绑定界面缩放
 					const devExhibit = devContent.firstChild;
-					var resizeTimer = setTimeout(() => {
-						transform(devExhibit);
-					}, 200);
 					window.addEventListener('resize', () => {
-						clearTimeout(resizeTimer);
-						resizeTimer = setTimeout(() => {
-							transform(devExhibit);
-						}, 200);
+						refreshZoom(devExhibit, 100);
 					});
 					// 绑定键盘布局点击事件
 					devContent.addEventListener('click', (e) => {
@@ -116,7 +118,6 @@
 							selectedKeycap = e.target;
 							selectedKeycap.classList.add('blink');
 						}
-						console.log(`你点击了:`, e.target);
 					});
 					break;
 				case 'DEV_TabPanel.json':
@@ -124,7 +125,7 @@
 					// 构建选项卡元素
 					const cfgsElement = document.createElement('div');
 					cfgsElement.className = 'configs';
-					window.pageElement.insertAdjacentElement('beforeend', cfgsElement);
+					pageElement.insertAdjacentElement('beforeend', cfgsElement);
 					// 构建标签列表
 					const tabList = document.createElement('div');
 					tabList.className = 'tab_list';
@@ -257,5 +258,16 @@
 		0
 	);
 
-	return window.pageElement;
+	// 监听动画开始事件
+	pageElement.addEventListener('animationstart', (e) => {
+		let eventElement = e.target;
+		if (e.animationName.includes('fadeIn') && eventElement.classList.contains('context')) {
+			(async () => {
+				while (!devContent.firstChild) await sleep(100);
+				refreshZoom(devContent.firstChild, 100);
+			})();
+		}
+	});
+
+	return pageElement;
 })();

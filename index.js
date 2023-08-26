@@ -154,10 +154,10 @@ var g_eval = eval;
 			let pageMakeJS = await fetch(pagePath).then((res) => res.text());
 			let pageElement = await eval(pageMakeJS);
 			pageList[pageName] = pageElement;
-			if (urlHash != pageName) {
-				pageElement.classList.add('animate__fadeOutLeftBig');
+			if (urlHash == pageName) {
+				pageBody.appendChild(pageElement);
+				pageElement.classList.add('animate__animated', 'animate__fadeInRightBig');
 			}
-			pageBody.appendChild(pageElement);
 		});
 	});
 	window.addEventListener('hashchange', (e) => {
@@ -170,6 +170,14 @@ var g_eval = eval;
 		unselectPage?.classList.add('animate__animated', `animate__fadeOut${selectedFlow ? 'Left' : 'Right'}Big`);
 		onselectPage?.classList.add('animate__animated', `animate__fadeIn${selectedFlow ? 'Right' : 'Left'}Big`);
 		onselectPage?.classList.remove('animate__fadeOutLeftBig', 'animate__fadeOutRightBig');
+		onselectPage && pageBody.appendChild(onselectPage);
 		urlHash = newHash;
+	});
+	// 监听动画结束事件
+	pageBody.addEventListener('animationend', (e) => {
+		let eventElement = e.target;
+		if (e.animationName.includes('fadeOut') && eventElement.classList.contains('context')) {
+			eventElement.remove();
+		}
 	});
 })();
