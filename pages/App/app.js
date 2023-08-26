@@ -147,8 +147,8 @@
 					// 绑定标签列表点击事件
 					var selectedTabLabel;
 					tabList.addEventListener('click', (e) => {
+						if (!e.target.classList.contains('tab_label')) return;
 						selectedTabLabel = e.target;
-						if (!selectedTabLabel.classList.contains('tab_label')) return;
 						tabList.childNodes.forEach((node) => node.removeAttribute('selected'));
 						selectedTabLabel.setAttribute('selected', '');
 						switch (selectedTabLabel.textContent) {
@@ -236,7 +236,7 @@
 									}
 									break;
 								default:
-									tabPanel.innerText = ``;
+									tabTips.innerText = ``;
 									break;
 							}
 						}
