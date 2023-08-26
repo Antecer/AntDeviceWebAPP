@@ -1,6 +1,6 @@
 :root {
-	--size-base: 20px;
-	--font-base: 20px;
+	--size-base: 15px;
+	--font-base: 15px;
 	--color-background: #222;
 	--color-keypanel: #333;
 	--color-keyborder: #333;
@@ -298,8 +298,8 @@
 .tab_list {
 	padding-top: 5px;
 	background: var(--color-tablist);
-	width: calc(var(--size-base) * 6);
-	font-size: 24px;
+	width: calc(var(--size-base) * 8);
+	font-size: 22px;
 	flex-flow: column;
 	overflow-y: auto;
 }
@@ -307,8 +307,8 @@
 .tab_label {
 	cursor: pointer;
 	color: var(--color-tablabel);
-	margin: 5px 5px;
-	padding: 0 5px;
+	margin: 0px 5px;
+	padding: 5px;
 }
 .tab_label:hover {
 	color: var(--color-keyhover);
