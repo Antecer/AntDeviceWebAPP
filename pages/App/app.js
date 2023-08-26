@@ -169,7 +169,6 @@
 								break;
 							default:
 								tabPanel.innerHTML = ``;
-								console.log(`你点击了: `, selectedTabLabel);
 								break;
 						}
 					});
@@ -238,7 +237,6 @@
 									break;
 								default:
 									tabPanel.innerText = ``;
-									console.log(`你点击了: `, selectedTabLabel);
 									break;
 							}
 						}
