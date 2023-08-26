@@ -28,7 +28,7 @@ var g_eval = eval;
 			Home: 'fa-home',
 			Products: 'fa-shopping-cart',
 			Prettify: 'fa-palette',
-			App: 'fa-download',
+			App: 'fa-cogs',
 			Support: 'fa-envelope',
 		},
 		dest: 'fa-globe-asia',
