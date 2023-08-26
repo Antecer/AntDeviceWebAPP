@@ -316,7 +316,7 @@
 .tab_label[selected] {
 	color: var(--color-font);
 	background: #777;
-	border-radius: 15px;
+	border-radius: 7px;
 }
 
 .tab_content {
