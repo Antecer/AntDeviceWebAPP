@@ -95,7 +95,7 @@ window.fetchAll = async (infolist, timeout) => {
 	 * @param nextUpdateTime 下次更新时间(单位:秒, 默认值 -1 为不更新)
 	 * @param reloadCallback 下次更新后是否重新运行回调函数(默认值 false)
 	 */
-	window.loadfiles = async (res, callback = undefined, nextUpdateTime = -1, reloadCallback = false) => {
+	window.loadfiles = async (res, callback = undefined, nextUpdateTime = -1, reloadCallback = undefined) => {
 		let needUpdate = false;
 		let localBlob = (await localforage.getItem(res.dkey)) || {};
 		res.file.forEach((fileName) => (res.blob[fileName] = localBlob[fileName])); // 创建数据转储，以便过滤过时资源
