@@ -1,0 +1,26 @@
+[
+	{
+		"name": "Home",
+		"icon": "fa-home"
+	},
+	{
+		"name": "Products",
+		"icon": "fa-shopping-cart"
+	},
+	{
+		"name": "Prettify",
+		"icon": "fa-palette"
+	},
+	{
+		"name": "Driver",
+		"icon": "fa-download"
+	},
+	{
+		"name": "App",
+		"icon": "fa-mobile-alt"
+	},
+	{
+		"name": "Support",
+		"icon": "fa-envelope"
+	}
+]
