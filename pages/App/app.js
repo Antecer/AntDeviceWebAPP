@@ -83,7 +83,7 @@
 		}
 		return tabPanelRows.join('');
 	};
-	// 载入资源
+	// 载入页面资源
 	let appres = {
 		dkey: 'AppResources',
 		path: 'pages/App/',
@@ -266,6 +266,33 @@
 			})();
 		}
 	});
+
+	// 绘制设备连接LOGO按钮
+	const connectLogo = document.createElement('div');
+	connectLogo.className = 'connect_logo';
+	connectLogo.innerText = 'Click To Connect Device (designing...)';
+	pageElement.insertAdjacentElement('beforeend', connectLogo);
+	// 载入WebUsbAPI
+	let usbapi = {
+		dkey: 'WebUsbAPI',
+		path: 'pages/App/',
+		file: ['webusbapi.js'],
+		blob: {},
+	};
+	loadfiles(
+		usbapi,
+		async (blob, name) => {
+			let webusbapi = g_eval(await new Response(blob).text());
+			window.usb = webusbapi((selectedDevice) => {
+				console.log(selectedDevice);
+				connectLogo.style.display = selectedDevice ? 'none' : 'flex';
+			});
+			connectLogo.addEventListener('click', () => {
+				window.usb.Request();
+			});
+		},
+		0
+	);
 
 	return pageElement;
 })();

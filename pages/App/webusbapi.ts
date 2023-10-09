@@ -1,6 +1,6 @@
-let usb = (function () {
+(callback: any) => {
 	enum CommandCodeEnum {
-		GetCID = 0x1D,
+		GetCID = 0x1d,
 		GetUID,
 		GetDeviceType = 0x20,
 		SetDeviceType,
@@ -20,19 +20,22 @@ let usb = (function () {
 		SetLedMatrix,
 		SetLedScript,
 		SetCfgSYS,
-		GoToBoot = 0xB1,
+		GoToBoot = 0xb1,
 		GoToUser,
 		CodeBoot,
 		CodeUser,
-		DebugGetPressedKeys = 0xD0,
+		DebugGetPressedKeys = 0xd0,
 		DebugGetPressedKey,
-		SetDebug = 0xDB
+		SetDebug = 0xdb,
 	}
-	let Sleep = (milliseconds: number) => new Promise(resolve => setTimeout(resolve, milliseconds));
-	let U16ArrToString = (arr: Uint16Array) => String.fromCharCode.apply(null, Array.from(arr.filter(x => x !== 0)));
-	let StringToU16Arr = (str: String) => Uint16Array.from(str, s => s.charCodeAt(0));
+	let Sleep = (milliseconds: number) => new Promise((resolve) => setTimeout(resolve, milliseconds));
+	let U16ArrToString = (arr: Uint16Array) => String.fromCharCode.apply(null, Array.from(arr.filter((x) => x !== 0)));
+	let StringToU16Arr = (str: String) => Uint16Array.from(str, (s) => s.charCodeAt(0));
 	let BufferToHexStr = (buf: ArrayBuffer) => Array.prototype.map.call(new Uint8Array(buf), (x) => ('00' + x.toString(16)).slice(-2));
-	let getDeviceList = async () => { deviceList = await navigator.usb.getDevices(); console.log(`已配对的设备:`, deviceList); };
+	let getDeviceList = async () => {
+		deviceList = await navigator.usb.getDevices();
+		console.log(`已配对的设备:`, deviceList);
+	};
 
 	let serialNumber = 'AntDeviceWithWebUSB';
 	let deviceList: USBDevice[] = [];
@@ -65,20 +68,20 @@ let usb = (function () {
 				return false;
 		}
 		return true;
-	}
+	};
 	let Read = async (byteCount?: number) => {
 		if (!selectedDevice?.device.opened) {
 			console.log(`No device connected!`);
-			return (new Uint8Array(0));
+			return new Uint8Array(0);
 		}
 		let epNumber = selectedDevice.endpointIn.endpointNumber;
 		let result = await selectedDevice.device.transferIn(epNumber, byteCount || 1024);
 		switch (result.status) {
 			case 'ok':
-				return (new Uint8Array(result.data!.buffer));
+				return new Uint8Array(result.data!.buffer);
 			case 'stall':
 				console.log(`Stall: WebUSB Ep${epNumber} transferIn stall!`);
-				selectedDevice.device.clearHalt(selectedDevice.endpointIn.direction, epNumber)
+				selectedDevice.device.clearHalt(selectedDevice.endpointIn.direction, epNumber);
 				break;
 			case 'babble':
 				console.log(`Babble: WebUSB Ep${epNumber} transferIn with more data than was expected.`);
@@ -87,9 +90,8 @@ let usb = (function () {
 				console.log(`Error: WebUSB Ep${epNumber} transferIn error!`);
 				break;
 		}
-		return (new Uint8Array(0));
-	}
-
+		return new Uint8Array(0);
+	};
 
 	class AntDevice {
 		public constructor() {
@@ -98,7 +100,7 @@ let usb = (function () {
 				this.Connect();
 			})();
 			navigator.usb.onconnect = (event) => {
-				if ((!selectedDevice) && (event.device.serialNumber == serialNumber)) {
+				if (!selectedDevice && event.device.serialNumber == serialNumber) {
 					console.log('Device Onconnect:', event.device);
 					this.Connect(event.device);
 					getDeviceList();
@@ -108,13 +110,18 @@ let usb = (function () {
 				if (selectedDevice?.device.opened === false) {
 					console.log('Device Disconnect:', event.device);
 					selectedDevice = undefined;
+					callback(selectedDevice);
 					getDeviceList();
 				}
 			};
 		}
 		async Connect(dev?: USBDevice) {
-			if (deviceList.length) { dev ||= deviceList[0]; }
-			if (!dev) { return console.log(`No device connected!`); }
+			if (deviceList.length) {
+				dev ||= deviceList[0];
+			}
+			if (!dev) {
+				return console.log(`No device connected!`);
+			}
 			console.log(`已连接的设备:`, dev);
 			// 连接设备
 			await dev.open();
@@ -122,49 +129,79 @@ let usb = (function () {
 			let configuration = dev.configurations[0];
 			await dev.selectConfiguration(configuration.configurationValue);
 			// 打开端点(WinUSB端点)
-			let selectedIfn = configuration.interfaces.find(ifn => ifn.alternate.interfaceProtocol == 255);
-			if (!selectedIfn) { return console.log(`Target interface not found!`); }
+			let selectedIfn = configuration.interfaces.find((ifn) => ifn.alternate.interfaceProtocol == 255);
+			if (!selectedIfn) {
+				return console.log(`Target interface not found!`);
+			}
 			await dev.claimInterface(selectedIfn.interfaceNumber);
 			// 读取设备属性
 			selectedDevice = {
 				device: dev,
 				isBoot: configuration.interfaces.length < 3,
-				endpointIn: selectedIfn.alternate.endpoints.find(ep => ep.direction == 'in')!,
-				endpointOut: selectedIfn.alternate.endpoints.find(ep => ep.direction == 'out')!,
+				endpointIn: selectedIfn.alternate.endpoints.find((ep) => ep.direction == 'in')!,
+				endpointOut: selectedIfn.alternate.endpoints.find((ep) => ep.direction == 'out')!,
 				uid: '',
 				cid: '',
-			}
-			selectedDevice.cid = BufferToHexStr((await this.Get(CommandCodeEnum.GetCID)).buffer).reverse().join('').toUpperCase();
-			selectedDevice.uid = BufferToHexStr((await this.Get(CommandCodeEnum.GetUID)).buffer).reverse().join('').toUpperCase();
+			};
+			selectedDevice.cid = BufferToHexStr((await this.Get(CommandCodeEnum.GetCID)).buffer)
+				.reverse()
+				.join('')
+				.toUpperCase();
+			selectedDevice.uid = BufferToHexStr((await this.Get(CommandCodeEnum.GetUID)).buffer)
+				.reverse()
+				.join('')
+				.toUpperCase();
 			console.log(`DeviceMode:`, selectedDevice.isBoot ? 'BootLoader' : 'Application');
+			callback(selectedDevice);
 		}
 		async Request(filterList?: USBDeviceFilter[]) {
-			filterList ||= [{ serialNumber: serialNumber }];
-			let dev = await navigator.usb.requestDevice({ filters: filterList });
+			filterList ||= [{serialNumber: serialNumber}];
+			let dev = await navigator.usb.requestDevice({filters: filterList});
 			this.Connect(dev);
+			getDeviceList();
 		}
-		get devices() { return deviceList; }
-		get device() { return selectedDevice?.device; }
-		get isBoot() { return selectedDevice?.isBoot; }
-		get cid() { return selectedDevice?.cid; }
-		get uid() { return selectedDevice?.uid; }
-		get opened() { return selectedDevice?.device.opened; }
-		get productId() { return selectedDevice && ('0x' + ('0000' + selectedDevice.device.productId.toString(16).toUpperCase()).slice(-4)); }
-		get vendorId() { return selectedDevice && ('0x' + ('0000' + selectedDevice.device.vendorId.toString(16).toUpperCase()).slice(-4)); }
-		get productName() { return selectedDevice?.device.productName; }
-		get vendorName() { return selectedDevice?.device.manufacturerName; }
+		get devices() {
+			return deviceList;
+		}
+		get device() {
+			return selectedDevice?.device;
+		}
+		get isBoot() {
+			return selectedDevice?.isBoot;
+		}
+		get cid() {
+			return selectedDevice?.cid;
+		}
+		get uid() {
+			return selectedDevice?.uid;
+		}
+		get opened() {
+			return selectedDevice?.device.opened;
+		}
+		get productId() {
+			return selectedDevice && '0x' + ('0000' + selectedDevice.device.productId.toString(16).toUpperCase()).slice(-4);
+		}
+		get vendorId() {
+			return selectedDevice && '0x' + ('0000' + selectedDevice.device.vendorId.toString(16).toUpperCase()).slice(-4);
+		}
+		get productName() {
+			return selectedDevice?.device.productName;
+		}
+		get vendorName() {
+			return selectedDevice?.device.manufacturerName;
+		}
 		async Set(code: number, page?: number, size?: number, buffer?: ArrayBuffer) {
 			if (!(code in CommandCodeEnum)) {
 				console.log(`Command code is undefind!`);
 				return false;
 			}
 			buffer ||= new ArrayBuffer(0);
-			page ||= (buffer.byteLength / 0x10000);
+			page ||= buffer.byteLength / 0x10000;
 			size ||= buffer.byteLength;
 			let u8Array = new Uint8Array(4 + size);
 			u8Array[0] = code;
 			u8Array[1] = page;
-			u8Array[2] = size & 0xFF;
+			u8Array[2] = size & 0xff;
 			u8Array[3] = size >> 8;
 			u8Array.set(new Uint8Array(buffer), 4);
 			return await Send(u8Array);
@@ -176,8 +213,8 @@ let usb = (function () {
 			}
 			page ||= 0x00;
 			size ||= 0x0000;
-			if (!(await Send(new Uint8Array([code, page, size & 0xFF, size >> 8])))) return (new Uint8Array(0));
-			let result = await Read((page * 65536) + size);
+			if (!(await Send(new Uint8Array([code, page, size & 0xff, size >> 8])))) return new Uint8Array(0);
+			let result = await Read(page * 65536 + size);
 			return result;
 		}
 		async setProductType(str: String) {
@@ -195,7 +232,7 @@ let usb = (function () {
 		async setCfgAll() {
 			var testU32Array = new Uint32Array(192 * 256);
 			for (let i = 0; i < testU32Array.length; ++i) {
-				testU32Array[i] = (i * 65536) + i;
+				testU32Array[i] = i * 65536 + i;
 			}
 			let result = await this.Set(CommandCodeEnum.SetCfgAll, undefined, undefined, testU32Array.buffer);
 			return result;
@@ -207,8 +244,8 @@ let usb = (function () {
 		async getKeyMatrix() {
 			let result = await this.Get(CommandCodeEnum.GetKeyMatrix, 0, 256);
 			let keyMatrix: number[][] = [];
-			(new Uint16Array(result.buffer)).forEach(m => {
-				keyMatrix.push([m & 0xFF, m >> 8]);
+			new Uint16Array(result.buffer).forEach((m) => {
+				keyMatrix.push([m & 0xff, m >> 8]);
 			});
 			return keyMatrix;
 		}
@@ -233,7 +270,7 @@ let usb = (function () {
 		}
 
 		async setKeyLayer(fnLayer: number, u16Array?: Uint16Array) {
-			fnLayer &= 0xF;
+			fnLayer &= 0xf;
 			u16Array ||= new Uint16Array(128);
 			// u16Array[7] ||= 0x4007; // 测试值ESC按钮
 			let result = await this.Set(CommandCodeEnum.SetKeyLayer, fnLayer, 256, u16Array.buffer);
@@ -243,7 +280,7 @@ let usb = (function () {
 		async setCodeOfUser() {
 			let fileHandle;
 			[fileHandle] = await window.showOpenFilePicker({
-				types: [{ description: "Firmware", accept: { "firmware/*": [".bin", ".hex"] } }],
+				types: [{description: 'Firmware', accept: {'firmware/*': ['.bin', '.hex']}}],
 				excludeAcceptAllOption: true,
 				multiple: false,
 			});
@@ -252,7 +289,9 @@ let usb = (function () {
 			let file = await fileHandle.getFile();
 			if (file.name.toLowerCase().endsWith('.bin')) {
 				let fileContent = await file.arrayBuffer();
-				if (fileContent.byteLength > 1024 * 32) { return console.log(`Firmware is too large!`); }
+				if (fileContent.byteLength > 1024 * 32) {
+					return console.log(`Firmware is too large!`);
+				}
 				await this.Set(CommandCodeEnum.CodeUser, undefined, undefined, fileContent);
 			} else {
 				console.log('hex文件支持暂未做');
@@ -267,4 +306,4 @@ let usb = (function () {
 	}
 
 	return new AntDevice();
-})();
+};

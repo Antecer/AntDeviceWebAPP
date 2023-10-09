@@ -340,3 +340,12 @@
 .keyshelf {
 	flex-flow: wrap;
 }
+
+.connect_logo {
+	position: absolute;
+	width: 100%;
+	height: 100%;
+	background: #603740A0;
+	align-items: center;
+	justify-content: center;
+}
