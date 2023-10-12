@@ -1,5 +1,5 @@
 "use strict";
-(callback) => {
+(() => {
     let CommandCodeEnum;
     (function (CommandCodeEnum) {
         CommandCodeEnum[CommandCodeEnum["GetCID"] = 29] = "GetCID";
@@ -84,12 +84,11 @@
         }
         return new Uint8Array(0);
     };
+    let Initialized = false;
     class AntDevice {
         constructor() {
-            (async () => {
-                await getDeviceList();
-                this.Connect();
-            })();
+            this.OnConnectEvent = (device) => { };
+            this.UnConnectEvent = (device) => { };
             navigator.usb.onconnect = (event) => {
                 if (!selectedDevice && event.device.serialNumber == serialNumber) {
                     console.log('Device Onconnect:', event.device);
@@ -101,10 +100,17 @@
                 if (selectedDevice?.device.opened === false) {
                     console.log('Device Disconnect:', event.device);
                     selectedDevice = undefined;
-                    callback(selectedDevice);
+                    this.UnConnectEvent(selectedDevice);
                     getDeviceList();
                 }
             };
+        }
+        async Init() {
+            if (Initialized)
+                return;
+            Initialized = true;
+            await getDeviceList();
+            this.Connect();
         }
         async Connect(dev) {
             if (deviceList.length) {
@@ -143,7 +149,7 @@
                 .join('')
                 .toUpperCase();
             console.log(`DeviceMode:`, selectedDevice.isBoot ? 'BootLoader' : 'Application');
-            callback(selectedDevice);
+            this.OnConnectEvent(selectedDevice);
         }
         async Request(filterList) {
             filterList || (filterList = [{ serialNumber: serialNumber }]);
@@ -299,4 +305,4 @@
         }
     }
     return new AntDevice();
-};
+})();

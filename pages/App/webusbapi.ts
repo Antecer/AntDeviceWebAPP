@@ -1,4 +1,4 @@
-(callback: any) => {
+(() => {
 	enum CommandCodeEnum {
 		GetCID = 0x1d,
 		GetUID,
@@ -93,12 +93,12 @@
 		return new Uint8Array(0);
 	};
 
+	let Initialized = false;
+
 	class AntDevice {
+		public OnConnectEvent = (device?: any) => {};
+		public UnConnectEvent = (device?: any) => {};
 		public constructor() {
-			(async () => {
-				await getDeviceList();
-				this.Connect();
-			})();
 			navigator.usb.onconnect = (event) => {
 				if (!selectedDevice && event.device.serialNumber == serialNumber) {
 					console.log('Device Onconnect:', event.device);
@@ -110,10 +110,16 @@
 				if (selectedDevice?.device.opened === false) {
 					console.log('Device Disconnect:', event.device);
 					selectedDevice = undefined;
-					callback(selectedDevice);
+					this.UnConnectEvent(selectedDevice);
 					getDeviceList();
 				}
 			};
+		}
+		async Init() {
+			if(Initialized) return;
+			Initialized = true;
+			await getDeviceList();
+			this.Connect();
 		}
 		async Connect(dev?: USBDevice) {
 			if (deviceList.length) {
@@ -152,7 +158,7 @@
 				.join('')
 				.toUpperCase();
 			console.log(`DeviceMode:`, selectedDevice.isBoot ? 'BootLoader' : 'Application');
-			callback(selectedDevice);
+			this.OnConnectEvent(selectedDevice);
 		}
 		async Request(filterList?: USBDeviceFilter[]) {
 			filterList ||= [{serialNumber: serialNumber}];
@@ -306,4 +312,4 @@
 	}
 
 	return new AntDevice();
-};
+})();

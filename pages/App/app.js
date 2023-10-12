@@ -282,14 +282,19 @@
 	loadfiles(
 		usbapi,
 		async (blob, name) => {
-			let webusbapi = g_eval(await new Response(blob).text());
-			window.usb = webusbapi((selectedDevice) => {
+			let webusb = g_eval(await new Response(blob).text());
+			window.usb = webusb;
+			webusb.UnConnectEvent = () => {
+				connectLogo.style.display = 'flex';
+			};
+			webusb.OnConnectEvent = (selectedDevice) => {
+				connectLogo.style.display = 'none';
 				console.log(selectedDevice);
-				connectLogo.style.display = selectedDevice ? 'none' : 'flex';
-			});
+			};
 			connectLogo.addEventListener('click', () => {
-				window.usb.Request();
+				webusb.Request();
 			});
+			webusb.Init();
 		},
 		0
 	);
